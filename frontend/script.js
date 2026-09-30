@@ -1,4 +1,4 @@
-const API_BASE = window.__API_BASE__ || "/api";
+const API_BASE = window.__API_BASE__ || "http://localhost:3000";
 
 const form = document.getElementById("convert-form");
 const resultEl = document.getElementById("result");
