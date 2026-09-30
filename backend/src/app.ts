@@ -1,5 +1,7 @@
 import express, { Request, Response } from "express";
 import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { convertQuerySchema } from "./schema";
 import { getExchangeRate } from "./rates";
 import { logger } from "./logger";
@@ -8,7 +10,16 @@ export function createApp() {
   const app = express();
 
   app.use(helmet());
+  app.use(cors());
   app.use(express.json());
+
+  const limiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: process.env.RATE_LIMIT_MAX ? Number(process.env.RATE_LIMIT_MAX) : 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use("/convert", limiter);
 
   app.get("/health", (_req: Request, res: Response) => {
     res.status(200).json({ status: "ok", uptimeSeconds: process.uptime() });
