@@ -4,6 +4,16 @@ Compare des devises via deux sources externes (Frankfurter, exchangerate.host)
 avec repli automatique en cas de panne, et un cache en mémoire pour limiter
 les appels et servir de filet de sécurité.
 
+## Architecture
+
+```
+[Navigateur] → fetch() direct → [Backend Express, Azure Container Apps]
+     ↓                                    ↓
+[Frontend statique, Nginx]         Frankfurter API
+Azure Container Apps                exchangerate.host (fallback)
+                                     cache mémoire (filet de sécurité)
+```
+
 ## Lancer le projet complet avec Docker
 
 ```bash
