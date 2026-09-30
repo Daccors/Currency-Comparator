@@ -4,7 +4,19 @@ Compare des devises via deux sources externes (Frankfurter, exchangerate.host)
 avec repli automatique en cas de panne, et un cache en mémoire pour limiter
 les appels et servir de filet de sécurité.
 
-## Lancer le backend en local
+## Lancer le projet complet avec Docker
+
+```bash
+docker compose up --build
+```
+
+- Frontend : http://localhost:8080
+- API directe : http://localhost:3000 (ex: http://localhost:3000/health)
+
+Le frontend (Nginx) fait proxy des appels `/api/*` vers le backend via le
+réseau interne Docker Compose (nom de service `backend`).
+
+## Lancer le backend seul, sans Docker (dev rapide)
 
 ```bash
 cd backend
