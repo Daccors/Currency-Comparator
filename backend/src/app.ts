@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import { convertQuerySchema } from "./schema";
 import { getExchangeRate } from "./rates";
 import { logger } from "./logger";
+import { metrics, recordSourceUsage } from "./metrics";
 
 export function createApp() {
   const app = express();
@@ -25,9 +26,16 @@ export function createApp() {
     res.status(200).json({ status: "ok", uptimeSeconds: process.uptime() });
   });
 
+  app.get("/metrics", (_req: Request, res: Response) => {
+    res.status(200).json(metrics);
+  });
+
   app.get("/convert", async (req: Request, res: Response) => {
+    metrics.requestsTotal += 1;
+
     const parsed = convertQuerySchema.safeParse(req.query);
     if (!parsed.success) {
+      metrics.errorsTotal += 1;
       return res.status(400).json({ error: parsed.error.issues });
     }
 
@@ -35,6 +43,7 @@ export function createApp() {
 
     try {
       const result = await getExchangeRate(from, to);
+      recordSourceUsage(result.source);
       return res.status(200).json({
         from,
         to,
@@ -46,6 +55,7 @@ export function createApp() {
         fetchedAt: result.fetchedAt,
       });
     } catch (err) {
+      metrics.errorsTotal += 1;
       logger.error?.((err as Error).message) ?? logger.log((err as Error).message);
       return res.status(503).json({
         error: "Service de taux de change temporairement indisponible. Réessayez plus tard.",
