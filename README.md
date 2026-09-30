@@ -73,6 +73,29 @@ npm run dev
 k6 run -e BASE_URL=http://localhost:3000 k6/load-test.js
 ```
 
+## Déploiement cloud (Azure Container Apps)
+
+- Frontend : https://TON-URL-FRONTEND-REELLE
+- Backend : https://TON-URL-BACKEND-REELLE
+
+### Décisions techniques (déploiement)
+
+- **Azure Container Apps** plutôt qu'AWS App Runner : AWS App Runner a
+  fermé l'accès aux nouveaux clients (restriction annoncée en 2026). Azure Container Apps est l'équivalent le plus proche
+  (déploiement d'image conteneur géré, scaling automatique, HTTPS
+  intégré, sans configuration VPC/ALB manuelle).
+- **URL du backend injectée en dur dans le frontend** (`window.__API_BASE__`
+  dans `index.html`) plutôt qu'une variable d'environnement au runtime :
+  limite assumée du choix Nginx statique.
+- **Appel direct navigateur → backend**, sans proxy Nginx intermédiaire :
+  le proxy interne (`proxy_pass http://backend:...`) qui fonctionne en
+  local via Docker Compose n'a pas de sens sur Azure où chaque service est
+  déployé indépendamment sous sa propre URL publique — CORS est activé
+  côté backend pour permettre cet appel direct depuis le frontend.
+- **Backend et frontend dans le même environnement Container Apps** :
+  limite du compte étudiant utilisé (1 seul environnement autorisé par
+  abonnement).
+
 ## Décisions techniques
 
 - **Backend Express + TypeScript** : montée en route rapide, typage fort,
