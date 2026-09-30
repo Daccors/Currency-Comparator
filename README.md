@@ -23,8 +23,8 @@ docker compose up --build
 - Frontend : http://localhost:8080
 - API directe : http://localhost:3000 (ex: http://localhost:3000/health)
 
-Le frontend (Nginx) fait proxy des appels `/api/*` vers le backend via le
-réseau interne Docker Compose (nom de service `backend`).
+Le frontend appelle le backend directement en HTTP (CORS activé côté
+backend), sans proxy Nginx intermédiaire, voir section Architecture.
 
 ## Lancer le backend seul, sans Docker (dev rapide)
 
@@ -136,3 +136,8 @@ k6 run -e BASE_URL=http://localhost:3000 k6/load-test.js
   grande échelle, au prix d'une complexité opérationnelle non justifiée ici.
 - Pas de gestion de devises invalides connues par aucune source.
 - Pas d'authentification/quota par utilisateur, seulement un rate-limit par IP.
+- L'URL du backend étant injectée en dur dans `index.html`, le frontend
+  buildé localement pointe vers le backend de production déployé plutôt
+  que vers le backend local. Une vraie séparation d'environnements
+  (variable au build, ou configuration runtime) serait nécessaire en
+  production.
