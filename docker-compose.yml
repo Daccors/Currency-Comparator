@@ -1,0 +1,21 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      - PORT=3000
+      - LOG_LEVEL=info
+      - RATE_LIMIT_MAX=100
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
