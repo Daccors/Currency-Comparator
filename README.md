@@ -41,6 +41,38 @@ de la disponibilité des API tierces.
 - `GET /convert?from=EUR&to=USD&amount=100` — conversion de devises
 - `GET /metrics` — compteurs d'usage (requêtes, erreurs, source des taux)
 
+## Test de charge
+
+Deux scénarios distincts, à ne pas confondre :
+
+**1. Scalabilité (trafic légitime distribué)**
+
+Un test k6 depuis une seule machine simule tout le trafic depuis une seule
+IP côté serveur, ce qui déclenche artificiellement le rate-limit anti-abus
+(429) avant même de tester la vraie capacité du système. Pour un test
+représentatif, monter temporairement la limite :
+
+```bash
+RATE_LIMIT_MAX=100000 npm run dev    # ou via docker-compose.yml
+k6 run -e BASE_URL=http://localhost:3000 k6/load-test.js
+```
+
+Résultat obtenu : p95 = 0.67ms, 0% d'erreurs, 6286 requêtes traitées sur
+50 utilisateurs virtuels simulés sur 2 minutes. Cette latence très basse
+s'explique par le cache en mémoire (TTL 5 min) qui absorbe l'essentiel du
+trafic après les premiers appels aux API externes.
+
+**2. Protection anti-abus (rate-limiting)**
+
+Avec la valeur par défaut (`RATE_LIMIT_MAX=100`), le même test démontre que
+le rate-limiter bloque bien le trafic excessif en provenance d'une seule
+source (429 attendus et volontaires), comportement de sécurité, pas un bug.
+
+```bash
+npm run dev
+k6 run -e BASE_URL=http://localhost:3000 k6/load-test.js
+```
+
 ## Décisions techniques
 
 - **Backend Express + TypeScript** : montée en route rapide, typage fort,
