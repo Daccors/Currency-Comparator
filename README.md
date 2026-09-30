@@ -75,8 +75,8 @@ k6 run -e BASE_URL=http://localhost:3000 k6/load-test.js
 
 ## Déploiement cloud (Azure Container Apps)
 
-- Frontend : https://TON-URL-FRONTEND-REELLE
-- Backend : https://TON-URL-BACKEND-REELLE
+- Frontend : https://currency-frontend.livelysmoke-78bfdb3e.francecentral.azurecontainerapps.io/
+- Backend : https://currency-backend.livelysmoke-78bfdb3e.francecentral.azurecontainerapps.io
 
 ### Décisions techniques (déploiement)
 
@@ -90,7 +90,7 @@ k6 run -e BASE_URL=http://localhost:3000 k6/load-test.js
 - **Appel direct navigateur → backend**, sans proxy Nginx intermédiaire :
   le proxy interne (`proxy_pass http://backend:...`) qui fonctionne en
   local via Docker Compose n'a pas de sens sur Azure où chaque service est
-  déployé indépendamment sous sa propre URL publique — CORS est activé
+  déployé indépendamment sous sa propre URL publique, CORS est activé
   côté backend pour permettre cet appel direct depuis le frontend.
 - **Backend et frontend dans le même environnement Container Apps** :
   limite du compte étudiant utilisé (1 seul environnement autorisé par
@@ -103,7 +103,26 @@ k6 run -e BASE_URL=http://localhost:3000 k6/load-test.js
 - **Cache en mémoire (`Map` + TTL)** plutôt que Redis : réduit les appels
   externes et sert de repli en cas de panne, sans dépendance supplémentaire
   à opérer. Limite assumée : non partagé entre plusieurs instances du
-  backend (voir "Known limitations" plus bas, section à compléter).
+  backend (voir "Known limitations" plus bas).
 - **`/metrics` en JSON simple** plutôt que le format Prometheus : aucun
   serveur Prometheus n'est déployé pour scraper l'endpoint dans le cadre de
   cet exercice.
+- **Frontend HTML/JS vanilla** plutôt qu'un framework (React) : périmètre
+  limité à un formulaire, pas de bénéfice à ajouter un framework pour un
+  cas d'usage aussi simple dans un temps limité — réduit le risque
+  d'implémentation sans réduire le respect du cahier des charges.
+- **Middlewares de sécurité minimalistes** (`helmet`, `cors`, rate-limit
+  configurable par variable d'environnement) plutôt qu'une solution plus
+  lourde (ex: authentification, API Gateway managé) : suffisant pour le
+  périmètre de l'exercice, chaque choix reste documenté et son coût
+  d'intégration est faible au regard du bénéfice.
+
+## Known limitations and possible improvements
+
+- Cache non partagé entre instances (→ Redis en production multi-instances).
+- Pas de circuit breaker (retry naïf, pas de "cooldown" après échecs répétés).
+- `/metrics` en JSON simple plutôt qu'au format Prometheus/Grafana.
+- Kubernetes non envisagé pour ce périmètre (2 services), pertinent à plus
+  grande échelle, au prix d'une complexité opérationnelle non justifiée ici.
+- Pas de gestion de devises invalides connues par aucune source.
+- Pas d'authentification/quota par utilisateur, seulement un rate-limit par IP.
